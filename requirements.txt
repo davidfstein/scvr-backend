@@ -4,5 +4,7 @@ cufflinks>=0.16
 gunicorn>=19.7.1
 numpy>=1.14.0
 pandas>=0.22.0
+scanpy
+scvr
 pillow
 requests
