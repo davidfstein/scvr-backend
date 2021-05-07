@@ -12,7 +12,9 @@ import networkx as nx
 import numpy as np
 import stream as st
 import pandas as pd
+import fetch_data
 
+fetch_data.download_data()
 
 # Initialize app
 APP_PATH = str(pathlib.Path(__file__).parent.resolve())
