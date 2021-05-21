@@ -1,0 +1,7 @@
+dash>=1.0.0
+numpy
+pandas
+pillow
+flask-cors
+scanpy
+scvr
