@@ -10,12 +10,12 @@ from flask_cors import CORS, cross_origin
 import matplotlib as mpl
 import networkx as nx
 import numpy as np
-import stream as st
+#import stream as st
 import pandas as pd
 import fetch_data
 import resource
 
-fetch_data.download_data()
+fetch_data.fetch_data()
 
 # Initialize app
 APP_PATH = str(pathlib.Path(__file__).parent.resolve())
