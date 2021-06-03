@@ -15,8 +15,6 @@ import pandas as pd
 import fetch_data
 import resource
 
-fetch_data.fetch_data()
-
 # Initialize app
 APP_PATH = str(pathlib.Path(__file__).parent.resolve())
 DATASET_DIRECTORY = os.path.join(APP_PATH, "app_datasets")
@@ -25,8 +23,6 @@ QR_DIRECTORY = os.path.join(APP_PATH, "assets")
 server = Flask(__name__)
 cors = CORS(server)
 server.config['CORS_HEADERS'] = 'Content-Type'
-API = "https://singlecellvrbackend.herokuapp.com:8080"
-#API = "localhost:8080"
 
 if not os.path.exists(DATASET_DIRECTORY):
     os.makedirs(DATASET_DIRECTORY)
