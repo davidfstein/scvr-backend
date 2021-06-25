@@ -87,13 +87,13 @@ def get_coordinates():
         dict_coord_cells = dict()
         dict_coord_cells["cell_id"] = adata.obs_names[i]
         if get_dataset_type_adata(db_name).lower() in ["scanpy", "paga", "velocity"]:
-            dict_coord_cells["x"] = str(adata.obsm[f"X_{embed}"][i, 0])
-            dict_coord_cells["y"] = str(adata.obsm[f"X_{embed}"][i, 1])
-            dict_coord_cells["z"] = str(adata.obsm[f"X_{embed}"][i, 2])
+            dict_coord_cells["x0"] = str(adata.obsm[f"X_{embed}"][i, 0])
+            dict_coord_cells["y0"] = str(adata.obsm[f"X_{embed}"][i, 1])
+            dict_coord_cells["z0"] = str(adata.obsm[f"X_{embed}"][i, 2])
         elif get_dataset_type_adata(db_name).lower() == "seurat":
-            dict_coord_cells["x"] = str(adata.obsm[f"{embed}_cell_embeddings"][i, 0])
-            dict_coord_cells["y"] = str(adata.obsm[f"{embed}_cell_embeddings"][i, 1])
-            dict_coord_cells["z"] = str(adata.obsm[f"{embed}_cell_embeddings"][i, 2])
+            dict_coord_cells["x0"] = str(adata.obsm[f"{embed}_cell_embeddings"][i, 0])
+            dict_coord_cells["y0"] = str(adata.obsm[f"{embed}_cell_embeddings"][i, 1])
+            dict_coord_cells["z0"] = str(adata.obsm[f"{embed}_cell_embeddings"][i, 2])
         elif get_dataset_type_adata(db_name).lower() == "stream":
             file_path = os.path.join(adata.uns["workdir"], "test")
             if not os.path.exists(file_path):
@@ -115,9 +115,9 @@ def get_coordinates():
                 )
                 dict_coord_curves["xyz"] = [
                     {
-                        "x": df_coord_curve_i.iloc[j, 0],
-                        "y": df_coord_curve_i.iloc[j, 1],
-                        "z": df_coord_curve_i.iloc[j, 2],
+                        "x0": df_coord_curve_i.iloc[j, 0],
+                        "y0": df_coord_curve_i.iloc[j, 1],
+                        "z0": df_coord_curve_i.iloc[j, 2],
                     }
                     for j in range(df_coord_curve_i.shape[0])
                 ]
@@ -130,9 +130,9 @@ def get_coordinates():
                 dict_nodes_i = dict()
                 dict_nodes_i["node_name"] = ft_node_label[node_i]
                 dict_nodes_i["xyz"] = {
-                    "x": ft_node_pos[node_i][0],
-                    "y": ft_node_pos[node_i][1],
-                    "z": ft_node_pos[node_i][2],
+                    "x0": ft_node_pos[node_i][0],
+                    "y0": ft_node_pos[node_i][1],
+                    "z0": ft_node_pos[node_i][2],
                 }
                 dict_nodes[ft_node_label[node_i]] = dict_nodes_i
             for edge_i in flat_tree.edges():
@@ -148,9 +148,9 @@ def get_coordinates():
             for i in range(adata.shape[0]):
                 dict_coord_cells = dict()
                 dict_coord_cells['cell_id'] = adata.obs_names[i]
-                dict_coord_cells['x'] = adata.obsm['X_dr'][i,0]
-                dict_coord_cells['y'] = adata.obsm['X_dr'][i,1]
-                dict_coord_cells['z'] = adata.obsm['X_dr'][i,2]
+                dict_coord_cells['x0'] = adata.obsm['X_dr'][i,0]
+                dict_coord_cells['y0'] = adata.obsm['X_dr'][i,1]
+                dict_coord_cells['z0'] = adata.obsm['X_dr'][i,2]
                 list_cells.append(dict_coord_cells)
             return jsonify(
                 {"nodes": dict_nodes, "edges": list_edges, "graph": list_curves, "cells": list_cells}
@@ -178,6 +178,10 @@ def get_features():
       http://127.0.0.1:8000/features?db_name=3_velocity_pancrease&feature=velocity&embed=umap&time=None
       http://127.0.0.1:8000/features?db_name=3_velocity_pancrease&feature=velocity&embed=umap&time=1
       http://127.0.0.1:8000/features?db_name=3_velocity_pancrease&feature=velocity&embed=umap&time=10
+
+    velocity grid examples:
+      http://127.0.0.1:8000/features?db_name=3_velocity_pancrease&feature=velocity_grid&embed=umap&time=10
+      http://127.0.0.1:8000/features?db_name=3_velocity_pancrease&feature=velocity_grid&embed=umap&time=100
     """
     database = request.args.get("db_name")
     feature = request.args.get("feature")
@@ -272,6 +276,36 @@ def get_features():
                 )
                 dict_coord_cells["z1"] = str(
                     adata.obsm[f"absolute_velocity_{embed}_{time}s"][i, 2]
+                )
+            else:
+                return jsonify({})
+            list_metadata.append(dict_coord_cells)
+    elif feature == "velocity_grid":
+        list_metadata = []
+        time = request.args.get("time")
+        p_mass = adata.uns['p_mass']
+        for i in np.where(p_mass >= 1)[0]:
+            dict_coord_cells = dict()
+
+            if time == "None":
+                dict_coord_cells["x0"] = str(adata.uns[f"X_grid"][i, 0])
+                dict_coord_cells["y0"] = str(adata.uns[f"X_grid"][i, 1])
+                dict_coord_cells["z0"] = str(adata.uns[f"X_grid"][i, 2])
+                dict_coord_cells["x1"] = str(adata.uns[f"V_grid"][i, 0])
+                dict_coord_cells["y1"] = str(adata.uns[f"V_grid"][i, 1])
+                dict_coord_cells["z1"] = str(adata.uns[f"V_grid"][i, 2])
+            elif time in list(map(str, [0.01, 0.1, 1, 5, 10, 20, 50, 80, 100])):
+                dict_coord_cells["x0"] = str(adata.uns[f"X_grid_{time}"][i, 0])
+                dict_coord_cells["y0"] = str(adata.uns[f"X_grid_{time}"][i, 1])
+                dict_coord_cells["z0"] = str(adata.uns[f"X_grid_{time}"][i, 2])
+                dict_coord_cells["x1"] = str(
+                    adata.uns[f"V_grid_{time}"][i, 0]
+                )
+                dict_coord_cells["y1"] = str(
+                    adata.uns[f"V_grid_{time}"][i, 1]
+                )
+                dict_coord_cells["z1"] = str(
+                    adata.uns[f"V_grid_{time}"][i, 2]
                 )
             else:
                 return jsonify({})
