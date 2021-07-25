@@ -12,4 +12,4 @@ ADD . /opt/scvr
 RUN pip install -r /tmp/requirements.txt
 
 #CMD conda run -n env_stream 
-CMD gunicorn --pythonpath dash_app/apps/singlecell-vr-api app:server --timeout 300
+CMD gunicorn --bind 0.0.0.0:8999 --pythonpath dash_app/apps/singlecell-vr-api app:server --timeout 300
