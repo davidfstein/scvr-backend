@@ -10,7 +10,7 @@ from flask_cors import CORS, cross_origin
 import matplotlib as mpl
 import networkx as nx
 import numpy as np
-#import stream as st
+import stream as st
 import pandas as pd
 import fetch_data
 import resource
@@ -75,6 +75,11 @@ def get_coordinates():
     """
     db_name = request.args.get("db_name")
     filename = glob(os.path.join(DATASET_DIRECTORY, f"{db_name}.*"))[0]
+
+    try:
+        del adata
+    except:
+        pass
 
     if get_dataset_type_adata(db_name).lower() in ["scanpy", "velocity", "seurat", "paga"]:
         adata = sc.read(filename)
@@ -158,6 +163,7 @@ def get_coordinates():
         else:
             raise TypeError("not supported format")
         list_cells.append(dict_coord_cells)
+    del adata
     return jsonify(list_cells)
 
 
@@ -190,6 +196,11 @@ def get_features():
     db_type = get_dataset_type_adata(filename)
     if feature.lower() == "velocity":
         embed = request.args.get("embed")
+
+    try:
+        del adata
+    except:
+        pass
 
     if get_dataset_type_adata(database).lower() in ["scanpy", "velocity", "seurat", "paga"]:
         adata = sc.read(filename)
@@ -365,7 +376,7 @@ def get_features():
                                          'z':df_coord_curve_i.iloc[j,2]} for j in range(df_coord_curve_i.shape[0])]
             list_curves.append(dict_coord_curves)
         list_metadata = list_curves
-    
+    del adata
     return jsonify({feature: list_metadata})
 
 
@@ -391,11 +402,17 @@ def get_available_annotations():
     db_name = request.args.get("db_name")
     filename = glob(os.path.join(DATASET_DIRECTORY, f"{db_name}.*"))[0]
 
+    try:
+        del adata
+    except:
+        pass
+
     if get_dataset_type_adata(db_name).lower() in ["scanpy", "velocity", "seurat", "paga"]:
         adata = sc.read(filename)
     else:
         adata = st.read(filename, file_format="pkl", workdir="./")
-    return jsonify(list(adata.obs.columns))
+    # Hack to remove two stream adata annotations that dont work in the annotation menu
+    return jsonify([name for name in list(adata.obs.columns) if name not in ['branch_id', 'branch_id_alias']])
 
 
 def get_available_annotations_adata(adata):
@@ -408,11 +425,16 @@ def get_genes():
     http://127.0.0.1:8000/genes?db_name=1_scanpy_10xpbmc
     """
     db_name = request.args.get("db_name")
+    try:
+        del adata
+    except:
+        pass
     adata = None
     if get_dataset_type_adata(db_name).lower() == 'stream':
         adata = st.read(glob(os.path.join(DATASET_DIRECTORY, f"{db_name}.*"))[0], file_format="pkl", workdir="./")
     else:
         adata = sc.read(glob(os.path.join(DATASET_DIRECTORY, f"{db_name}.*"))[0])
+    
     return jsonify(list(adata.var_names))
 
 
@@ -430,10 +452,16 @@ def get_ts():
     db_name = request.args.get("db_name")
     filename = glob(os.path.join(DATASET_DIRECTORY, f"{db_name}.*"))[0]
 
+    try:
+        del adata
+    except:
+        pass
+
     if get_dataset_type_adata(db_name) == "velocity":
         adata = sc.read(filename)
         ts = [k.replace('absolute_velocity_umap_', '').replace('s', '')
               for k in adata.obsm.keys() if k.startswith('absolute')]
+    del adata
     return jsonify(list(ts))
 
 def get_colors(adata,ann):
