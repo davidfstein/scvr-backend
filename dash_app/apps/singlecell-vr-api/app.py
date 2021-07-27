@@ -14,6 +14,7 @@ import stream as st
 import pandas as pd
 import fetch_data
 import resource
+import gc
 
 # Initialize app
 APP_PATH = str(pathlib.Path(__file__).parent.resolve())
@@ -164,6 +165,7 @@ def get_coordinates():
             raise TypeError("not supported format")
         list_cells.append(dict_coord_cells)
     del adata
+    gc.collect()
     return jsonify(list_cells)
 
 
@@ -377,6 +379,7 @@ def get_features():
             list_curves.append(dict_coord_curves)
         list_metadata = list_curves
     del adata
+    gc.collect()
     return jsonify({feature: list_metadata})
 
 
@@ -404,15 +407,21 @@ def get_available_annotations():
 
     try:
         del adata
+        gc.collect()
     except:
         pass
 
+    adata = None
     if get_dataset_type_adata(db_name).lower() in ["scanpy", "velocity", "seurat", "paga"]:
         adata = sc.read(filename)
     else:
         adata = st.read(filename, file_format="pkl", workdir="./")
+    
+    annotations = [name for name in list(adata.obs.columns) if name not in ['branch_id', 'branch_id_alias']]
+    del adata
+    gc.collect()
     # Hack to remove two stream adata annotations that dont work in the annotation menu
-    return jsonify([name for name in list(adata.obs.columns) if name not in ['branch_id', 'branch_id_alias']])
+    return jsonify(annotations)
 
 
 def get_available_annotations_adata(adata):
@@ -427,6 +436,7 @@ def get_genes():
     db_name = request.args.get("db_name")
     try:
         del adata
+        gc.collect()
     except:
         pass
     adata = None
@@ -435,7 +445,11 @@ def get_genes():
     else:
         adata = sc.read(glob(os.path.join(DATASET_DIRECTORY, f"{db_name}.*"))[0])
     
-    return jsonify(list(adata.var_names))
+    genes = adata.var_names
+    if adata:
+        del adata
+        gc.collect()
+    return jsonify(list(genes))
 
 
 def get_genes_adata(adata):
@@ -462,13 +476,14 @@ def get_ts():
         ts = [k.replace('absolute_velocity_umap_', '').replace('s', '')
               for k in adata.obsm.keys() if k.startswith('absolute')]
     del adata
+    gc.collect()
     return jsonify(list(ts))
 
 def get_colors(adata,ann):
     df_cell_colors = pd.DataFrame(index=adata.obs.index)
     if(is_numeric_dtype(adata.obs[ann])):
         cm = mpl.cm.get_cmap('viridis',512)
-        norm = mpl.colors.Normalize(vmin=0, vmax=max(adata.obs[ann]),clip=True)
+        norm = mpl.colors.Normalize(vmin=0, vmax=max(adata.obs[ann]), clip=True)
         df_cell_colors[ann+'_color'] = [mpl.colors.to_hex(cm(norm(x))) for x in adata.obs[ann]]
     else:
         df_cell_colors[ann+'_color'] = ''
